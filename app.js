@@ -14,6 +14,7 @@ function stopCustomers() {
   $('customer-lane').replaceChildren();
 }
 function finishCustomers() {
+  if (!serving) return;
   stopCustomers();
   $('skip-customers').hidden = true;
   $('scene-label').textContent = 'A SWEET DAY IN THE BOOKS';
@@ -61,10 +62,18 @@ function animateCustomers(row) {
   }
   later(finishCustomers, count ? (count - 1) * (reduced ? 100 : 240) + (reduced ? 700 : 3100) : 1800);
 }
+let saveRejected = false;
 try {
-  const saved = JSON.parse(localStorage.getItem(saveKey));
-  if (saved?.version === 1 && Number.isFinite(saved.cash) && saved.cash >= 0 && Array.isArray(saved.history) && saved.history.length <= 30 && Number.isInteger(saved.event) && game.events[saved.event] && saved.history.every(r => game.breakdown(r).every(b => game.recipe(b.variety) && ['quantity', 'price', 'sold', 'revenue', 'ingredients'].every(k => Number.isFinite(b[k]))) && ['day', 'quantity', 'sold', 'revenue', 'expenses', 'profit', 'cash'].every(k => Number.isFinite(r[k])))) state = saved;
-} catch (_) { /* Storage is optional; the game also works from a local file. */ }
+  const raw = localStorage.getItem(saveKey);
+  if (raw !== null) {
+    let saved;
+    try { saved = JSON.parse(raw); } catch (_) { saveRejected = true; }
+    const restored = game.restore(saved);
+    if (restored) state = restored;
+    else saveRejected = true;
+  }
+} catch (_) { /* Storage may be unavailable or contain malformed JSON. */ }
+
 function plan() { return { batches: game.varieties.map(v => ({ variety: v.id, quantity: $(`quantity-${v.id}`).valueAsNumber, price: $(`price-${v.id}`).valueAsNumber })), advertising: $('advertising').valueAsNumber }; }
 function restorePlan(row) {
   for (const v of game.varieties) {
@@ -148,3 +157,11 @@ $('skip-customers').addEventListener('click', finishCustomers);
 $('restart').addEventListener('click', restart);
 restorePlan(state.history.at(-1));
 render();
+
+if (saveRejected) {
+  const notice = document.createElement('p');
+  notice.className = 'report-note';
+  notice.setAttribute('role', 'status');
+  notice.textContent = 'This saved game contains invalid or inconsistent data. A fresh shop has been opened.';
+  $('welcome').prepend(notice);
+}

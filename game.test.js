@@ -98,3 +98,52 @@ test('legacy saved rows normalize for breakdowns without losing finances', () =>
   assert.deepEqual(game.breakdown(row),[{variety:'classic',quantity:20,price:2,sold:12,revenue:24,ingredients:10}]);
   assert.equal(game.breakdown({...row,variety:'oatmeal'})[0].ingredients,13);
 });
+
+test('rejects forged save cash and inconsistent daily accounts', () => {
+  const valid = game.play(game.initial(), plan, () => .5);
+  assert.ok(game.restore(valid));
+  for (const edit of [s => s.cash = 999999, s => s.history[0].cash += 1, s => s.history[0].revenue += 1, s => s.history[0].expenses = 0, s => s.history[0].day = 30, s => s.history[0].batches[0].sold = 999]) {
+    const forged = JSON.parse(JSON.stringify(valid)); edit(forged);
+    assert.equal(game.restore(forged), null);
+  }
+  assert.equal(game.restore({ ...game.initial(), cash: 999999 }), null);
+});
+test('rejects malformed saves safely and preserves valid legacy history', () => {
+  for (const bad of [null, {}, { ...game.initial(), history: [null] }, { ...game.initial(), event: -1 }, { ...game.initial(), history: Array(31).fill({}) }]) assert.equal(game.restore(bad), null);
+  const valid = game.play(game.initial(), plan, () => .5);
+  const old = JSON.parse(JSON.stringify(valid)); delete old.history[0].batches;
+  assert.ok(game.restore(old));
+  assert.deepEqual(game.restore(valid), valid);
+});
+test('input validation cannot bypass UI money steps or crash on malformed plans', () => {
+  for (const p of [null, {}, { ...plan, batches: null }, { ...plan, price: .251 }, { ...plan, advertising: .5 }, { ...plan, batches: [null] }]) {
+    assert.doesNotThrow(() => game.validate(game.initial(), p));
+    assert.ok(game.validate(game.initial(), p));
+  }
+});
+test('game configuration cannot be altered to make ingredients free', () => {
+  const original = game.varieties[0].ingredientCost;
+  try { game.varieties[0].ingredientCost = 0; } catch (_) {}
+  assert.equal(game.varieties[0].ingredientCost, original);
+});
+test('rejects financially consistent sales that exceed possible demand', () => {
+  const rowState = game.play(game.initial(), { quantity: 100, price: 20, advertising: 0 }, () => .5);
+  const row = rowState.history[0];
+  row.batches[0].sold = 100; row.batches[0].revenue = 2000;
+  row.sold = 100; row.revenue = 2000; row.profit = 1945; row.cash = 2045; rowState.cash = 2045;
+  assert.equal(game.restore(rowState), null);
+});
+test('legitimate random mixed runs survive save validation throughout 30 days', () => {
+  let seed = 12345;
+  const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+  for (let run = 0; run < 15; run++) {
+    let state = game.initial();
+    for (let day = 0; day < 30 && state.cash >= 5; day++) {
+      const batches = game.varieties.map(v => ({ variety: v.id, quantity: Math.floor(random() * 10), price: v.suggestedPrice }));
+      const p = { batches, advertising: 0 };
+      if (game.cost(p) > state.cash) p.batches.forEach(b => b.quantity = 0);
+      state = game.play(state, p, random);
+      assert.ok(game.restore(JSON.parse(JSON.stringify(state))), `run ${run}, day ${day}`);
+    }
+  }
+});

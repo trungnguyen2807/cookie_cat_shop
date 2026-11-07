@@ -28,3 +28,9 @@ Then visit http://localhost:8000.
 - Progress saves automatically when browser storage is available. New game resets it.
 
 Run simulation checks with `node --test game.test.js`.
+
+## Save validation and local play
+
+Saved games are treated as untrusted data. Loading reconciles each day's quantities, prices, sales, ingredient costs, shared expenses, profit, and cash from the initial $100. Invalid or inconsistent saves open a fresh shop with a visible notice. Input rules are also enforced in the simulation, not just by browser form attributes. Run all simulation and UI integration checks with `node --test`.
+
+This is an offline, client-only game. These checks catch malformed and inconsistent edits; they cannot make a player-controlled browser cheat-proof. Players can still replace the JavaScript, restore an earlier save, or forge a plausible history. Trusted competitive scores would require a server to own the simulation and saves.
