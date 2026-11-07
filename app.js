@@ -3,6 +3,7 @@ const $ = id => document.getElementById(id);
 const game = window.CookieGame;
 const saveKey = 'nguyen-cookie-shop-v1';
 const currency = n => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(n);
+const inputIds = ['advertising', ...game.varieties.flatMap(v => [`quantity-${v.id}`, `price-${v.id}`])];
 let state = game.initial();
 let serving = false;
 let customerTimers = [];
@@ -28,12 +29,12 @@ function animateCustomers(row) {
   $('report').hidden = true;
   $('customer-scene').hidden = false;
   $('skip-customers').hidden = false;
-  $('scene-label').textContent = `DAY ${row.day} · ${game.recipe(row.variety).name.toUpperCase()}`;
+  $('scene-label').textContent = `DAY ${row.day} · SHOP IS OPEN`;
   $('result-title').textContent = 'The neighbors are stopping by!';
   $('scene-counter').textContent = '0 cookies sold';
   $('scene-caption').textContent = row.sold ? 'Fresh cookies, coming right up…' : 'Waiting for a cookie craving…';
   updateEstimate();
-  for (const id of ['variety', 'quantity', 'price', 'advertising']) $(id).disabled = true;
+  for (const id of inputIds) $(id).disabled = true;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   $('customer-scene').scrollIntoView({ behavior: reduced ? 'instant' : 'smooth', block: 'center' });
   // More sales mean more visitors; group large orders to keep the scene short.
@@ -53,7 +54,7 @@ function animateCustomers(row) {
       later(() => {
         served += cookies;
         $('scene-counter').textContent = `${served} / ${row.sold} cookies sold`;
-        $('scene-caption').textContent = `“Thank you!” · ${cookies} ${game.recipe(row.variety).name.toLowerCase()} cookies to go`;
+        $('scene-caption').textContent = `“Thank you!” · ${cookies} cookies to go`;
       }, reduced ? 100 : 1200);
       later(() => visitor.remove(), reduced ? 500 : 3000);
     }, i * (reduced ? 100 : 240));
@@ -62,16 +63,25 @@ function animateCustomers(row) {
 }
 try {
   const saved = JSON.parse(localStorage.getItem(saveKey));
-  if (saved?.version === 1 && Number.isFinite(saved.cash) && saved.cash >= 0 && Array.isArray(saved.history) && saved.history.length <= 30 && Number.isInteger(saved.event) && game.events[saved.event] && saved.history.every(r => game.recipe(r.variety) && ['day', 'quantity', 'sold', 'revenue', 'expenses', 'profit', 'cash'].every(k => Number.isFinite(r[k])))) state = saved;
+  if (saved?.version === 1 && Number.isFinite(saved.cash) && saved.cash >= 0 && Array.isArray(saved.history) && saved.history.length <= 30 && Number.isInteger(saved.event) && game.events[saved.event] && saved.history.every(r => game.breakdown(r).every(b => game.recipe(b.variety) && ['quantity', 'price', 'sold', 'revenue', 'ingredients'].every(k => Number.isFinite(b[k]))) && ['day', 'quantity', 'sold', 'revenue', 'expenses', 'profit', 'cash'].every(k => Number.isFinite(r[k])))) state = saved;
 } catch (_) { /* Storage is optional; the game also works from a local file. */ }
-function plan() { return { variety: $('variety').value, quantity: $('quantity').valueAsNumber, price: $('price').valueAsNumber, advertising: $('advertising').valueAsNumber }; }
+function plan() { return { batches: game.varieties.map(v => ({ variety: v.id, quantity: $(`quantity-${v.id}`).valueAsNumber, price: $(`price-${v.id}`).valueAsNumber })), advertising: $('advertising').valueAsNumber }; }
+function restorePlan(row) {
+  for (const v of game.varieties) {
+    const b = row && game.breakdown(row).find(b => b.variety === v.id);
+    $(`quantity-${v.id}`).value = b ? b.quantity : row ? 0 : v.id === 'classic' ? 20 : 10;
+    $(`price-${v.id}`).value = b ? b.price : v.suggestedPrice;
+  }
+  $('advertising').value = row && Number.isFinite(row.advertising) ? row.advertising : 5;
+}
+function recipeSummary(row) {
+  return game.breakdown(row).map(b => `${game.recipe(b.variety).name}: ${b.quantity} / ${b.sold} @ ${currency(b.price)}`).join('<br>');
+}
 function finished() { return state.history.length >= 30 || state.cash < 5; }
 function updateEstimate() {
   const p = plan();
-  const recipe = game.recipe(p.variety);
-  $('unit-cost').textContent = `${currency(recipe.ingredientCost)} / cookie`;
-  $('variety-tip').textContent = `Suggested price ${currency(recipe.suggestedPrice)} · bake one variety each day.`;
-  $('ingredient-cost').textContent = currency(Number.isFinite(p.quantity) ? p.quantity * recipe.ingredientCost : 0);
+  const ingredients = p.batches.reduce((sum, b) => sum + (Number.isFinite(b.quantity) ? b.quantity * game.recipe(b.variety).ingredientCost : 0), 0);
+  $('ingredient-cost').textContent = currency(ingredients);
   $('ad-cost').textContent = currency(Number.isFinite(p.advertising) ? p.advertising : 0);
   $('total-cost').textContent = currency(Number.isFinite(game.cost(p)) ? game.cost(p) : 0);
   const error = game.validate(state, p);
@@ -91,7 +101,7 @@ function showReport() {
     : row.quantity === 0 ? 'A quiet day at the shop. You still paid overhead and any advertising.'
     : row.sold === row.quantity ? 'Sold out! A bigger batch could help you reach more hungry neighbors.'
     : `${row.quantity - row.sold} cookies left over. Try a smaller batch, a lower price, or a little more advertising tomorrow.`;
-  $('report').innerHTML = `<div class="report-hero"><strong class="${row.profit < 0 ? 'negative' : ''}">${row.profit >= 0 ? '+' : '−'}${currency(Math.abs(row.profit))}</strong><span>day ${row.day} net profit</span></div><div class="report-row"><span>Cookie variety</span><b>${game.recipe(row.variety).name}</b></div><div class="report-row"><span>Cookies sold</span><b>${row.sold} / ${row.quantity}</b></div><div class="report-row"><span>Revenue</span><b>${currency(row.revenue)}</b></div><div class="report-row"><span>Expenses</span><b>${currency(row.expenses)}</b></div><div class="report-row"><span>Remaining cash</span><b>${currency(row.cash)}</b></div><p class="report-note">${message}</p>${ended ? '<button class="primary" id="play-again">Start a fresh shop <span>↗</span></button>' : ''}`;
+  $('report').innerHTML = `<div class="report-hero"><strong class="${row.profit < 0 ? 'negative' : ''}">${row.profit >= 0 ? '+' : '−'}${currency(Math.abs(row.profit))}</strong><span>day ${row.day} net profit</span></div><div class="table-scroll"><table class="recipe-results"><thead><tr><th>Recipe</th><th>Baked / sold</th><th>Price</th><th>Ingredients</th><th>Revenue</th></tr></thead><tbody>${game.breakdown(row).map(b => `<tr><td>${game.recipe(b.variety).name}</td><td>${b.quantity} / ${b.sold}</td><td>${currency(b.price)}</td><td>${currency(b.ingredients)}</td><td>${currency(b.revenue)}</td></tr>`).join('')}</tbody></table></div><div class="report-row"><span>Shared advertising / overhead</span><b>${currency(row.advertising ?? 0)} / $5.00</b></div><div class="report-row"><span>Cookies sold</span><b>${row.sold} / ${row.quantity}</b></div><div class="report-row"><span>Revenue</span><b>${currency(row.revenue)}</b></div><div class="report-row"><span>Expenses</span><b>${currency(row.expenses)}</b></div><div class="report-row"><span>Remaining cash</span><b>${currency(row.cash)}</b></div><p class="report-note">${message}</p>${ended ? '<button class="primary" id="play-again">Start a fresh shop <span>↗</span></button>' : ''}`;
   if (ended) $('play-again').addEventListener('click', restart);
 }
 function render() {
@@ -107,9 +117,9 @@ function render() {
   $('event-icon').textContent = event.icon;
   $('event-title').textContent = finished() ? 'Thanks for baking with us' : event.title;
   $('event-copy').textContent = finished() ? 'A new adventure is only a fresh batch away.' : event.copy;
-  for (const id of ['variety', 'quantity', 'price', 'advertising']) $(id).disabled = finished();
+  for (const id of inputIds) $(id).disabled = finished();
   $('ledger-count').textContent = `${state.history.length} ${state.history.length === 1 ? 'day' : 'days'} in the books`;
-  $('ledger-body').innerHTML = state.history.length ? [...state.history].reverse().map(r => `<tr><td>${String(r.day).padStart(2, '0')}</td><td>${game.recipe(r.variety).name}</td><td>${r.quantity} / ${r.sold}</td><td>${currency(r.revenue)}</td><td>${currency(r.expenses)}</td><td class="${r.profit >= 0 ? 'positive' : 'negative'}">${currency(r.profit)}</td><td>${currency(r.cash)}</td></tr>`).join('') : '<tr><td colspan="7" class="empty">Your first chapter is still in the oven.</td></tr>';
+  $('ledger-body').innerHTML = state.history.length ? [...state.history].reverse().map(r => `<tr><td>${String(r.day).padStart(2, '0')}</td><td>${recipeSummary(r)}</td><td>${r.quantity} / ${r.sold}</td><td>${currency(r.revenue)}</td><td>${currency(r.expenses)}</td><td class="${r.profit >= 0 ? 'positive' : 'negative'}">${currency(r.profit)}</td><td>${currency(r.cash)}</td></tr>`).join('') : '<tr><td colspan="7" class="empty">Your first chapter is still in the oven.</td></tr>';
   updateEstimate();
   showReport();
 }
@@ -118,17 +128,12 @@ function restart() {
   stopCustomers();
   $('customer-scene').hidden = true;
   state = game.initial();
-  $('variety').value = 'classic';
-  $('quantity').value = 40; $('price').value = 2; $('advertising').value = 5;
+  restorePlan();
   $('welcome').hidden = false; $('report').hidden = true;
   $('result-title').textContent = 'Every great shop starts small.';
   save(); render();
 }
 function save() { try { localStorage.setItem(saveKey, JSON.stringify(state)); } catch (_) { /* Continue without persistent storage. */ } }
-$('variety').addEventListener('change', () => {
-  $('price').value = game.recipe($('variety').value).suggestedPrice;
-  updateEstimate();
-});
 $('plan-form').addEventListener('input', updateEstimate);
 $('plan-form').addEventListener('submit', event => {
   event.preventDefault();
@@ -141,9 +146,5 @@ $('plan-form').addEventListener('submit', event => {
 });
 $('skip-customers').addEventListener('click', finishCustomers);
 $('restart').addEventListener('click', restart);
-const lastDay = state.history.at(-1);
-if (lastDay) {
-  $('variety').value = game.recipe(lastDay.variety).id;
-  $('price').value = Number.isFinite(lastDay.price) ? lastDay.price : game.recipe(lastDay.variety).suggestedPrice;
-}
+restorePlan(state.history.at(-1));
 render();

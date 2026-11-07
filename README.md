@@ -16,9 +16,10 @@ Then visit http://localhost:8000.
 
 ## How it works
 
-- Choose one variety per day: classic chocolate chip ($0.50 ingredients, $2 suggested price), oatmeal raisin ($0.65, $2.25), or double chocolate ($0.90, $3). Changing variety fills in its suggested selling price; you can adjust it.
-- Each variety has demand relative to its suggested price. Premium cookies cost more to bake and support a higher selling price. Daily overhead is $5.
-- Reports, the ledger, customer purchases, and saved days keep the chosen variety. Older saves continue as classic chocolate chip.
+- Bake any mix of classic chocolate chip ($0.50 ingredients, $2 suggested price), oatmeal raisin ($0.65, $2.25), and double chocolate ($0.90, $3). Each has its own daily quantity and selling price; quantity 0 skips a recipe.
+- Advertising is shared. Daily overhead is $5, charged once alongside all ingredients and advertising before sales.
+- One shared traffic pool is split equally between stocked recipes, with price sensitivity relative to each recipe's suggested price. Allocations use largest remainders, so offering all three at suggested prices brings the same total demand as offering one. Customers whose preferred recipe sells out do not switch recipes.
+- Reports and saved ledger days retain per-recipe quantities, prices, sales, ingredients and revenue, plus daily totals. Reload restores the last day's mixed plan and advertising. Original saves and earlier single-variety saves remain supported.
 - All expenses are paid from your available cash before sales.
 - Price, advertising, daily events, and small random fluctuations affect demand.
 - Unsold cookies expire each day.
