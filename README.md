@@ -16,7 +16,9 @@ Then visit http://localhost:8000.
 
 ## How it works
 
-- Ingredients cost $0.50 per cookie; daily overhead is $5.
+- Choose one variety per day: classic chocolate chip ($0.50 ingredients, $2 suggested price), oatmeal raisin ($0.65, $2.25), or double chocolate ($0.90, $3). Changing variety fills in its suggested selling price; you can adjust it.
+- Each variety has demand relative to its suggested price. Premium cookies cost more to bake and support a higher selling price. Daily overhead is $5.
+- Reports, the ledger, customer purchases, and saved days keep the chosen variety. Older saves continue as classic chocolate chip.
 - All expenses are paid from your available cash before sales.
 - Price, advertising, daily events, and small random fluctuations affect demand.
 - Unsold cookies expire each day.

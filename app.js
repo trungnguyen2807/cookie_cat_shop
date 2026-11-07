@@ -28,12 +28,12 @@ function animateCustomers(row) {
   $('report').hidden = true;
   $('customer-scene').hidden = false;
   $('skip-customers').hidden = false;
-  $('scene-label').textContent = `DAY ${row.day} · SHOP IS OPEN`;
+  $('scene-label').textContent = `DAY ${row.day} · ${game.recipe(row.variety).name.toUpperCase()}`;
   $('result-title').textContent = 'The neighbors are stopping by!';
   $('scene-counter').textContent = '0 cookies sold';
   $('scene-caption').textContent = row.sold ? 'Fresh cookies, coming right up…' : 'Waiting for a cookie craving…';
   updateEstimate();
-  for (const id of ['quantity', 'price', 'advertising']) $(id).disabled = true;
+  for (const id of ['variety', 'quantity', 'price', 'advertising']) $(id).disabled = true;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   $('customer-scene').scrollIntoView({ behavior: reduced ? 'instant' : 'smooth', block: 'center' });
   // More sales mean more visitors; group large orders to keep the scene short.
@@ -53,7 +53,7 @@ function animateCustomers(row) {
       later(() => {
         served += cookies;
         $('scene-counter').textContent = `${served} / ${row.sold} cookies sold`;
-        $('scene-caption').textContent = `“Thank you!” · ${cookies} cookies to go`;
+        $('scene-caption').textContent = `“Thank you!” · ${cookies} ${game.recipe(row.variety).name.toLowerCase()} cookies to go`;
       }, reduced ? 100 : 1200);
       later(() => visitor.remove(), reduced ? 500 : 3000);
     }, i * (reduced ? 100 : 240));
@@ -62,13 +62,16 @@ function animateCustomers(row) {
 }
 try {
   const saved = JSON.parse(localStorage.getItem(saveKey));
-  if (saved?.version === 1 && Number.isFinite(saved.cash) && saved.cash >= 0 && Array.isArray(saved.history) && saved.history.length <= 30 && Number.isInteger(saved.event) && game.events[saved.event] && saved.history.every(r => ['day', 'quantity', 'sold', 'revenue', 'expenses', 'profit', 'cash'].every(k => Number.isFinite(r[k])))) state = saved;
+  if (saved?.version === 1 && Number.isFinite(saved.cash) && saved.cash >= 0 && Array.isArray(saved.history) && saved.history.length <= 30 && Number.isInteger(saved.event) && game.events[saved.event] && saved.history.every(r => game.recipe(r.variety) && ['day', 'quantity', 'sold', 'revenue', 'expenses', 'profit', 'cash'].every(k => Number.isFinite(r[k])))) state = saved;
 } catch (_) { /* Storage is optional; the game also works from a local file. */ }
-function plan() { return { quantity: $('quantity').valueAsNumber, price: $('price').valueAsNumber, advertising: $('advertising').valueAsNumber }; }
+function plan() { return { variety: $('variety').value, quantity: $('quantity').valueAsNumber, price: $('price').valueAsNumber, advertising: $('advertising').valueAsNumber }; }
 function finished() { return state.history.length >= 30 || state.cash < 5; }
 function updateEstimate() {
   const p = plan();
-  $('ingredient-cost').textContent = currency(Number.isFinite(p.quantity) ? p.quantity * .5 : 0);
+  const recipe = game.recipe(p.variety);
+  $('unit-cost').textContent = `${currency(recipe.ingredientCost)} / cookie`;
+  $('variety-tip').textContent = `Suggested price ${currency(recipe.suggestedPrice)} · bake one variety each day.`;
+  $('ingredient-cost').textContent = currency(Number.isFinite(p.quantity) ? p.quantity * recipe.ingredientCost : 0);
   $('ad-cost').textContent = currency(Number.isFinite(p.advertising) ? p.advertising : 0);
   $('total-cost').textContent = currency(Number.isFinite(game.cost(p)) ? game.cost(p) : 0);
   const error = game.validate(state, p);
@@ -88,7 +91,7 @@ function showReport() {
     : row.quantity === 0 ? 'A quiet day at the shop. You still paid overhead and any advertising.'
     : row.sold === row.quantity ? 'Sold out! A bigger batch could help you reach more hungry neighbors.'
     : `${row.quantity - row.sold} cookies left over. Try a smaller batch, a lower price, or a little more advertising tomorrow.`;
-  $('report').innerHTML = `<div class="report-hero"><strong class="${row.profit < 0 ? 'negative' : ''}">${row.profit >= 0 ? '+' : '−'}${currency(Math.abs(row.profit))}</strong><span>day ${row.day} net profit</span></div><div class="report-row"><span>Cookies sold</span><b>${row.sold} / ${row.quantity}</b></div><div class="report-row"><span>Revenue</span><b>${currency(row.revenue)}</b></div><div class="report-row"><span>Expenses</span><b>${currency(row.expenses)}</b></div><div class="report-row"><span>Remaining cash</span><b>${currency(row.cash)}</b></div><p class="report-note">${message}</p>${ended ? '<button class="primary" id="play-again">Start a fresh shop <span>↗</span></button>' : ''}`;
+  $('report').innerHTML = `<div class="report-hero"><strong class="${row.profit < 0 ? 'negative' : ''}">${row.profit >= 0 ? '+' : '−'}${currency(Math.abs(row.profit))}</strong><span>day ${row.day} net profit</span></div><div class="report-row"><span>Cookie variety</span><b>${game.recipe(row.variety).name}</b></div><div class="report-row"><span>Cookies sold</span><b>${row.sold} / ${row.quantity}</b></div><div class="report-row"><span>Revenue</span><b>${currency(row.revenue)}</b></div><div class="report-row"><span>Expenses</span><b>${currency(row.expenses)}</b></div><div class="report-row"><span>Remaining cash</span><b>${currency(row.cash)}</b></div><p class="report-note">${message}</p>${ended ? '<button class="primary" id="play-again">Start a fresh shop <span>↗</span></button>' : ''}`;
   if (ended) $('play-again').addEventListener('click', restart);
 }
 function render() {
@@ -104,9 +107,9 @@ function render() {
   $('event-icon').textContent = event.icon;
   $('event-title').textContent = finished() ? 'Thanks for baking with us' : event.title;
   $('event-copy').textContent = finished() ? 'A new adventure is only a fresh batch away.' : event.copy;
-  for (const id of ['quantity', 'price', 'advertising']) $(id).disabled = finished();
+  for (const id of ['variety', 'quantity', 'price', 'advertising']) $(id).disabled = finished();
   $('ledger-count').textContent = `${state.history.length} ${state.history.length === 1 ? 'day' : 'days'} in the books`;
-  $('ledger-body').innerHTML = state.history.length ? [...state.history].reverse().map(r => `<tr><td>${String(r.day).padStart(2, '0')}</td><td>${r.quantity} / ${r.sold}</td><td>${currency(r.revenue)}</td><td>${currency(r.expenses)}</td><td class="${r.profit >= 0 ? 'positive' : 'negative'}">${currency(r.profit)}</td><td>${currency(r.cash)}</td></tr>`).join('') : '<tr><td colspan="6" class="empty">Your first chapter is still in the oven.</td></tr>';
+  $('ledger-body').innerHTML = state.history.length ? [...state.history].reverse().map(r => `<tr><td>${String(r.day).padStart(2, '0')}</td><td>${game.recipe(r.variety).name}</td><td>${r.quantity} / ${r.sold}</td><td>${currency(r.revenue)}</td><td>${currency(r.expenses)}</td><td class="${r.profit >= 0 ? 'positive' : 'negative'}">${currency(r.profit)}</td><td>${currency(r.cash)}</td></tr>`).join('') : '<tr><td colspan="7" class="empty">Your first chapter is still in the oven.</td></tr>';
   updateEstimate();
   showReport();
 }
@@ -115,12 +118,17 @@ function restart() {
   stopCustomers();
   $('customer-scene').hidden = true;
   state = game.initial();
+  $('variety').value = 'classic';
   $('quantity').value = 40; $('price').value = 2; $('advertising').value = 5;
   $('welcome').hidden = false; $('report').hidden = true;
   $('result-title').textContent = 'Every great shop starts small.';
   save(); render();
 }
 function save() { try { localStorage.setItem(saveKey, JSON.stringify(state)); } catch (_) { /* Continue without persistent storage. */ } }
+$('variety').addEventListener('change', () => {
+  $('price').value = game.recipe($('variety').value).suggestedPrice;
+  updateEstimate();
+});
 $('plan-form').addEventListener('input', updateEstimate);
 $('plan-form').addEventListener('submit', event => {
   event.preventDefault();
@@ -133,4 +141,9 @@ $('plan-form').addEventListener('submit', event => {
 });
 $('skip-customers').addEventListener('click', finishCustomers);
 $('restart').addEventListener('click', restart);
+const lastDay = state.history.at(-1);
+if (lastDay) {
+  $('variety').value = game.recipe(lastDay.variety).id;
+  $('price').value = Number.isFinite(lastDay.price) ? lastDay.price : game.recipe(lastDay.variety).suggestedPrice;
+}
 render();

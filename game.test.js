@@ -39,3 +39,21 @@ test('closes when overhead cannot be afforded', () => {
   assert.equal(state.cash, 0);
   assert.throws(() => game.play(state, plan));
 });
+test('recipes use their own ingredient cost and preserve identity in saved days', () => {
+  const row = game.play(game.initial(), { quantity: 20, price: 3, advertising: 0, variety: 'double-chocolate' }, () => .5).history[0];
+  assert.equal(row.expenses, 23);
+  assert.equal(row.sold, 20);
+  assert.equal(row.revenue, 60);
+  assert.equal(row.cash, 137);
+  assert.equal(JSON.parse(JSON.stringify(row)).variety, 'double-chocolate');
+});
+test('premium recipes have demand at suggested price and enforce affordability', () => {
+  const row = game.play(game.initial(), { quantity: 100, price: 3, advertising: 0, variety: 'double-chocolate' }, () => .5).history[0];
+  assert.equal(row.sold, 32);
+  assert.throws(() => game.play(game.initial(), { quantity: 110, price: 3, advertising: 0, variety: 'double-chocolate' }));
+  assert.equal(game.cost({ quantity: 40, price: 2.25, advertising: 5, variety: 'oatmeal' }), 36);
+});
+test('unknown recipes are rejected and old plans remain classic', () => {
+  assert.throws(() => game.play(game.initial(), { ...plan, variety: '<script>' }));
+  assert.equal(game.play(game.initial(), plan, () => .5).history[0].variety, 'classic');
+});
