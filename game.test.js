@@ -1,6 +1,6 @@
-const { test } = require('node:test');
-const assert = require('node:assert/strict');
-const game = require('./game');
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import game from './game.js';
 const plan = { quantity: 40, price: 2, advertising: 5 };
 test('starts at $100 and reconciles daily finances', () => {
   const result = game.play(game.initial(), plan, () => .5);
@@ -134,6 +134,7 @@ test('rejects financially consistent sales that exceed possible demand', () => {
   assert.equal(game.restore(rowState), null);
 });
 test('legitimate random mixed runs survive save validation throughout 30 days', () => {
+  // Use repeatable randomness so a failure can be reproduced.
   let seed = 12345;
   const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
   for (let run = 0; run < 15; run++) {
@@ -146,4 +147,91 @@ test('legitimate random mixed runs survive save validation throughout 30 days', 
       assert.ok(game.restore(JSON.parse(JSON.stringify(state))), `run ${run}, day ${day}`);
     }
   }
+});
+
+// This fixed random value produces one-cookie baskets, even after discount rounding.
+test('discounts never create buyers beyond daily visitors', () => {
+  const batches = game.varieties.map(v => ({ variety: v.id, quantity: 100, price: .25 }));
+  const state = game.play({ ...game.initial(), cash: 1000 }, { batches, advertising: 0 }, () => .5);
+  assert.equal(state.history[0].visitors, 32);
+  assert.equal(state.history[0].sold, 32);
+});
+test('customers switch to available cookies when their preference sells out', () => {
+  const batches = [{ variety: 'classic', quantity: 1, price: 2 }, { variety: 'oatmeal', quantity: 40, price: 2.25 }];
+  const row = game.play(game.initial(), { batches, advertising: 0 }, () => .5).history[0];
+  assert.deepEqual(row.batches.map(b => b.sold), [1, 31]);
+  assert.equal(row.sold, 32);
+  const state = game.play(game.initial(), { batches, advertising: 0 }, () => .5);
+  assert.deepEqual(game.restore(JSON.parse(JSON.stringify(state))), state);
+});
+test('switching customers can refuse expensive alternatives and never exceed available stock', () => {
+  const p = { batches: [{ variety: 'classic', quantity: 1, price: 2 }, { variety: 'oatmeal', quantity: 40, price: 20 }], advertising: 0 };
+  const row = game.play(game.initial(), p, () => .5).history[0];
+  assert.equal(row.sold, 1);
+  p.batches[1] = { variety: 'oatmeal', quantity: 1, price: 2.25 };
+  assert.equal(game.play(game.initial(), p, () => .5).history[0].sold, 2);
+});
+test('old discounted saves remain valid after capped sales rollout', () => {
+  const legacy = { version: 1, event: 0, cash: 106, history: [{ day: 1, event: 0, quantity: 100, price: 1, variety: 'classic', advertising: 0, sold: 61, revenue: 61, expenses: 55, profit: 6, cash: 106 }] };
+  assert.ok(game.restore(legacy));
+});
+test('switching can exhaust two varieties and fills remaining demand from the third', () => {
+  const batches = game.varieties.map((v, i) => ({ variety: v.id, quantity: i === 2 ? 40 : 1, price: v.suggestedPrice }));
+  const state = game.play(game.initial(), { batches, advertising: 0 }, () => .5);
+  assert.deepEqual(state.history[0].batches.map(b => b.sold), [1, 1, 30]);
+  assert.ok(game.restore(state));
+});
+test('save validation rejects altered visitor counts and coordinated sales edits', () => {
+  const state = game.play(game.initial(), { quantity: 50, price: 2, advertising: 0 }, () => .5);
+  const impossible = JSON.parse(JSON.stringify(state));
+  impossible.history[0].visitors = 1000;
+  assert.equal(game.restore(impossible), null);
+  const inflated = JSON.parse(JSON.stringify(state));
+  const row = inflated.history[0];
+  row.batches[0].sold++; row.batches[0].revenue += 2;
+  row.sold++; row.revenue += 2; row.profit += 2; row.cash += 2; inflated.cash += 2;
+  assert.equal(game.restore(inflated), null);
+});
+
+test('basket quantities become progressively rarer from one to eight', () => {
+  const counts = Array(8).fill(0);
+  // Cover the full probability range evenly instead of relying on random samples.
+  for (let i = 0; i < 10000; i++) counts[game.basketSize((i + .5) / 10000) - 1]++;
+  assert.deepEqual(counts, [6000, 2000, 1000, 500, 250, 150, 70, 30]);
+});
+test('daily baskets are capped at eight per visitor and survive save validation', () => {
+  let call = 0;
+  const random = () => call++ === 0 ? .5 : .999;
+  const state = game.play(game.initial(), { quantity: 100, price: .25, advertising: 0 }, random);
+  const row = state.history[0];
+  assert.equal(row.visitors, 32);
+  assert.equal(row.baskets.length, 32);
+  assert.ok(row.baskets.every(n => n === 8));
+  assert.equal(row.sold, 100);
+  assert.deepEqual(game.restore(state), state);
+  row.baskets[0] = 9;
+  assert.equal(game.restore(state), null);
+});
+test('one-cookie visitor model saves still load unchanged', () => {
+  const state = game.play(game.initial(), { quantity: 50, price: 2, advertising: 0 }, () => .5);
+  state.history[0].salesModel = 2;
+  delete state.history[0].baskets;
+  assert.deepEqual(game.restore(state), state);
+});
+test('discount boosts expected basket sizes by 20 to 60 percent, with unbiased integer rounding', () => {
+  const mean = (size, boostRoll) => Array.from({ length: 1000 }, (_, i) => game.discountBasket(size, boostRoll, (i + .5) / 1000)).reduce((s, n) => s + n, 0) / 1000;
+  assert.equal(mean(2, 0), 2.4);
+  assert.equal(mean(2, .5), 2.8);
+  assert.equal(mean(2, 1), 3.2);
+  assert.equal(game.discountBasket(8, 1, 0), 8);
+});
+test('discount increases demand without creating visitors or exceeding basket limits', () => {
+  const run = price => {
+    let calls = 0;
+    return game.play(game.initial(), { quantity: 100, price, advertising: 0 }, () => calls++ === 0 ? .5 : .1).history[0];
+  };
+  const normal = run(2), discounted = run(1.75);
+  assert.equal(discounted.visitors, normal.visitors);
+  assert.ok(discounted.sold > normal.sold);
+  assert.ok(discounted.baskets.every(n => n >= 1 && n <= 8));
 });

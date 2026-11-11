@@ -1,0 +1,191 @@
+{
+  "strategy": "40 of each recipe daily; prices 1.75/2/2.75; advertising $5; trim batches only if cash is insufficient",
+  "summary": {
+    "average": 4950.18,
+    "minimum": 4759,
+    "maximum": 5088.75,
+    "completed": 30
+  },
+  "results": [
+    {
+      "run": 1,
+      "days": 30,
+      "cash": 4955.75,
+      "reducedDays": 0
+    },
+    {
+      "run": 2,
+      "days": 30,
+      "cash": 4923.5,
+      "reducedDays": 0
+    },
+    {
+      "run": 3,
+      "days": 30,
+      "cash": 4983.75,
+      "reducedDays": 0
+    },
+    {
+      "run": 4,
+      "days": 30,
+      "cash": 5068.5,
+      "reducedDays": 0
+    },
+    {
+      "run": 5,
+      "days": 30,
+      "cash": 4834.25,
+      "reducedDays": 0
+    },
+    {
+      "run": 6,
+      "days": 30,
+      "cash": 4876,
+      "reducedDays": 0
+    },
+    {
+      "run": 7,
+      "days": 30,
+      "cash": 4939.25,
+      "reducedDays": 0
+    },
+    {
+      "run": 8,
+      "days": 30,
+      "cash": 4887.25,
+      "reducedDays": 0
+    },
+    {
+      "run": 9,
+      "days": 30,
+      "cash": 4987.5,
+      "reducedDays": 0
+    },
+    {
+      "run": 10,
+      "days": 30,
+      "cash": 4972.75,
+      "reducedDays": 0
+    },
+    {
+      "run": 11,
+      "days": 30,
+      "cash": 4968,
+      "reducedDays": 0
+    },
+    {
+      "run": 12,
+      "days": 30,
+      "cash": 4958.75,
+      "reducedDays": 0
+    },
+    {
+      "run": 13,
+      "days": 30,
+      "cash": 4998.75,
+      "reducedDays": 0
+    },
+    {
+      "run": 14,
+      "days": 30,
+      "cash": 4980,
+      "reducedDays": 0
+    },
+    {
+      "run": 15,
+      "days": 30,
+      "cash": 4836.25,
+      "reducedDays": 0
+    },
+    {
+      "run": 16,
+      "days": 30,
+      "cash": 4865,
+      "reducedDays": 0
+    },
+    {
+      "run": 17,
+      "days": 30,
+      "cash": 4988.5,
+      "reducedDays": 0
+    },
+    {
+      "run": 18,
+      "days": 30,
+      "cash": 4965.25,
+      "reducedDays": 0
+    },
+    {
+      "run": 19,
+      "days": 30,
+      "cash": 5035,
+      "reducedDays": 0
+    },
+    {
+      "run": 20,
+      "days": 30,
+      "cash": 5005.5,
+      "reducedDays": 0
+    },
+    {
+      "run": 21,
+      "days": 30,
+      "cash": 4960.75,
+      "reducedDays": 0
+    },
+    {
+      "run": 22,
+      "days": 30,
+      "cash": 4943,
+      "reducedDays": 0
+    },
+    {
+      "run": 23,
+      "days": 30,
+      "cash": 4998,
+      "reducedDays": 0
+    },
+    {
+      "run": 24,
+      "days": 30,
+      "cash": 5088.75,
+      "reducedDays": 0
+    },
+    {
+      "run": 25,
+      "days": 30,
+      "cash": 4759,
+      "reducedDays": 0
+    },
+    {
+      "run": 26,
+      "days": 30,
+      "cash": 4873.5,
+      "reducedDays": 0
+    },
+    {
+      "run": 27,
+      "days": 30,
+      "cash": 4994.25,
+      "reducedDays": 0
+    },
+    {
+      "run": 28,
+      "days": 30,
+      "cash": 4948.5,
+      "reducedDays": 0
+    },
+    {
+      "run": 29,
+      "days": 30,
+      "cash": 4975.5,
+      "reducedDays": 0
+    },
+    {
+      "run": 30,
+      "days": 30,
+      "cash": 4934.5,
+      "reducedDays": 0
+    }
+  ]
+}

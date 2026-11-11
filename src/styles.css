@@ -1,0 +1,97 @@
+@import "tailwindcss";
+@theme {
+  --color-ink: #382c28;
+  --color-muted: #75675d;
+  --color-paper: #faf5ea;
+  --color-line: #e5dac8;
+  --color-rust: #a84d30;
+  --color-sage: #3d644e;
+  --font-serif: Georgia, serif;
+}
+@layer base {
+  body { @apply m-0 bg-paper text-ink font-sans text-sm; background-image: radial-gradient(ellipse at 85% 8%, #f2dfc280, transparent 35%); }
+  button:not(:disabled) { cursor: pointer; }
+  button:focus-visible, a:focus-visible { outline: 3px solid #a2633c; outline-offset: 4px; }
+  input:focus { outline: none; }
+}
+/* Custom CSS draws the shop and characters; page layout uses Tailwind. */
+.illustration{position:relative;width:330px;height:240px;background:#efe9d9;border-radius:150px 150px 10px 10px;overflow:hidden;margin-right:30px}
+.shop-sign{position:absolute;top:27px;width:100%;text-align:center;font-family:Georgia,serif;font-style:italic;color:#7a735b;font-size:16px}
+.cat{position:absolute;left:100px;top:69px;width:126px;height:143px;background:#d99b62;border-radius:55px 55px 20px 20px;text-align:center}
+.ears{position:absolute;top:-26px;left:6px;font-size:51px;letter-spacing:17px;color:#d99b62;white-space:nowrap}
+.face{position:relative;display:block;font-size:34px;margin-top:22px}
+.apron{display:block;margin:8px auto;background:#f5e8c9;width:70px;height:57px;border-radius:16px 16px 0 0;padding:11px;font-family:Georgia,serif;color:#bd6b43;font-size:24px}
+.counter{position:absolute;bottom:0;background:#80523c;width:100%;height:56px;border-top:9px solid #a97452;display:flex;align-items:center;justify-content:space-around;color:#eedec7;font-size:9px;letter-spacing:2px}
+.counter b{font-size:24px}
+.cookie{position:absolute;bottom:51px;width:46px;height:46px;background:#d9a364;border:3px solid #b77c43;border-radius:50%;color:#765039;display:grid;place-items:center;font-size:18px;box-shadow:inset 9px 4px 0 #e8ba7c}
+.c1{left:35px;transform:rotate(-20deg)}
+.c2{right:35px;transform:rotate(20deg)}
+@media(max-width:760px){.illustration{width:210px;min-width:210px;height:220px;margin:0}
+.cat{left:45px}
+.c1{left:10px}
+.c2{right:10px}
+.shop-sign{font-size:13px}}
+@media(max-width:500px){.illustration{display:none}}
+.tiny-shop{position:absolute;left:42%;top:20px;width:112px;height:112px;background:#f8e6bf;border:3px solid #b78c62;border-radius:7px 7px 0 0}
+.awning{height:22px;background:repeating-linear-gradient(90deg,#bd694c 0 17px,#f8e8ca 17px 34px);border-radius:3px 3px 7px 7px;margin:-4px -7px 0}
+.shop-cat{display:block;text-align:center;font-size:38px;margin-top:8px}
+.shop-desk{position:absolute;bottom:0;left:-6px;right:-6px;background:#976849;text-align:center;padding:9px 0;font-size:9px;letter-spacing:1px;color:#fff2d9;border-radius:3px}
+.street-plant{position:absolute;right:12px;bottom:43px;font-size:27px}
+.customer-lane{position:absolute;inset:0}
+/* React supplies --lane and --coat to vary each character. */
+.customer{position:absolute;top:calc(89px + var(--lane));left:0;width:48px;height:67px;z-index:2;animation:visit-shop 3s linear both;pointer-events:none}
+.customer-animal{position:relative;z-index:2;font-size:33px;display:block;text-align:center;animation:happy-hop .3s ease-in-out infinite alternate}
+.customer-coat{display:block;background:var(--coat);width:25px;height:24px;border-radius:10px 10px 6px 6px;margin:-6px auto 0;border-bottom:5px solid #715c4c}
+.purchase{position:absolute;white-space:nowrap;left:-5px;top:-24px;font-size:11px;padding:5px 7px;border-radius:12px 12px 12px 0;background:#fffdf8;box-shadow:0 2px 5px #66543c15;animation:purchase-pop 3s both}
+.cookie-bag{position:absolute;top:32px;right:-7px;font-size:21px;animation:purchase-pop 3s both}
+/* Walk in, pause at the counter, then leave with the order. */
+@keyframes visit-shop{0%{transform:translateX(-60px);opacity:0}8%{opacity:1}38%,61%{transform:translateX(150px);opacity:1}100%{transform:translateX(480px);opacity:0}}
+@keyframes happy-hop{from{transform:translateY(0) rotate(-4deg)}to{transform:translateY(-5px) rotate(4deg)}}
+@keyframes purchase-pop{0%,38%{opacity:0;transform:scale(.6)}45%,85%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
+.still-customer{left:30%;animation:none}
+.still-customer .customer-animal,.still-customer .purchase,.still-customer .cookie-bag{animation:none}
+@media(prefers-reduced-motion:reduce){.customer,.customer-animal,.purchase,.cookie-bag{animation:none!important}}
+@media(max-width:500px){.tiny-shop{left:45%}
+@keyframes visit-shop{0%{transform:translateX(-55px);opacity:0}8%{opacity:1}38%,61%{transform:translateX(95px);opacity:1}100%{transform:translateX(360px);opacity:0}}}
+.illustration{width:345px;min-width:300px;height:254px;margin-right:12px;border:1px solid #e0d1b8;background:radial-gradient(circle at 50% 40%,#fff3d5 0 26%,transparent 27%),linear-gradient(135deg,#e8ead7,#efe0c2);box-shadow:inset 0 0 0 9px #ffffff35,0 14px 25px #75502b0c;isolation:isolate}
+.illustration:before{content:"";position:absolute;inset:0 0 auto;height:18px;background:repeating-linear-gradient(90deg,#b86d51 0 25px,#f8edcf 25px 50px);border-radius:0 0 10px 10px}
+.shop-sign{top:34px;font-size:17px}
+.cat{top:82px;left:calc(50% - 63px);background:linear-gradient(105deg,#e6ad76,#ce8b53);box-shadow:inset -9px 0 0 #c7854c55;transform-origin:bottom center;animation:cat-breathe 4s ease-in-out infinite}
+.ears{top:-17px;left:7px;width:112px;height:36px;font-size:0;letter-spacing:0}
+.ears:before,.ears:after{content:"";position:absolute;top:0;width:34px;height:39px;background:#dda16b;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.ears:before{left:0;transform:rotate(-15deg)}
+.ears:after{right:0;transform:rotate(15deg)}
+.face{font-size:34px;z-index:1}
+.cat-cheeks{position:absolute;left:18px;top:61px;width:17px;height:8px;background:#c96f5e88;border-radius:50%;box-shadow:74px 0 #c96f5e88}
+.apron{border:2px solid #fff4d9;box-shadow:0 -2px 0 #b67745;font-style:italic}
+.counter{height:62px;background:repeating-linear-gradient(90deg,transparent 0 63px,#ffffff08 63px 65px),#80523c;border-top:10px solid #b78058;box-shadow:0 -3px #c99468}
+.counter b{color:#f1c37d}
+.cookie{bottom:57px;box-shadow:inset 7px 3px 0 #efc181,2px 3px 0 #70462d25;background:radial-gradient(circle at 28% 23%,#805131 0 3px,transparent 4px),radial-gradient(circle at 70% 68%,#805131 0 3px,transparent 4px),#dda666}
+.shop-sparkle{position:absolute;color:#a77f45;font-size:24px;animation:twinkle 4s ease-in-out infinite}
+.sparkle-one{left:39px;top:85px}
+.sparkle-two{right:32px;top:110px;font-size:32px;animation-delay:1.5s}
+.tiny-shop{top:25px;box-shadow:3px 5px #73533712;background:linear-gradient(90deg,#f7dfb2,#fff0d2)}
+.awning{box-shadow:0 3px 0 #91614325}
+.shop-cat{filter:drop-shadow(0 2px #b7864b44)}
+.shop-desk{box-shadow:0 3px #6d4c35}
+.street-plant{bottom:46px}
+.customer{filter:drop-shadow(0 4px 2px #6f51391c)}
+.purchase{border:1px solid #e4d8c2;font-weight:650;color:#5e674c;z-index:4}
+.customer-coat{box-shadow:inset -4px 0 #0000000a}
+@keyframes cat-breathe{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(3px) rotate(1deg)}}
+@keyframes twinkle{0%,100%{opacity:.45;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
+@keyframes cookie-welcome{from{opacity:0;transform:translateY(12px) rotate(-15deg)}to{opacity:1;transform:none}}
+@media(max-width:900px){.illustration{min-width:270px;width:290px}}
+@media(max-width:760px){.illustration{min-width:220px;width:235px;height:235px;margin:0}
+.shop-sign{font-size:14px}
+.cat{top:76px}
+.sparkle-one{left:17px}
+.sparkle-two{right:15px}}
+@media(max-width:500px){.illustration{display:block;align-self:center;width:100%;max-width:300px;min-width:0;height:220px}
+.cat{top:64px}
+.shop-sign{top:26px}
+.illustration:before{height:13px}
+.tiny-shop{left:44%}}
+@media(prefers-reduced-motion:reduce){.still-customer{left:25%}}
+/* Respect the system motion preference for both animation and scrolling. */
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
